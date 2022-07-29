@@ -1,9 +1,12 @@
 const path = require("path");
+const os = require("os");
 
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserWebpackPlugin = require("terser-webpack-plugin");
 
+const threads = os.cpus().length;
 module.exports = {
   entry: "./src/main.js", // 相对路径
 
@@ -66,9 +69,23 @@ module.exports = {
           {
             test: /\.m?js$/,
             exclude: /node_modules/, // 排除node_modules中的js文件不处理
-            use: {
-              loader: "babel-loader",
-            },
+            // include: path.resolve(__dirname,'../src'),
+            use: [
+              {
+                loader: "thread-loader",
+                options: {
+                  works: threads,
+                },
+              },
+              {
+                loader: "babel-loader",
+                options: {
+                  cacheDirectory: true, // 开启 babel 缓存
+                  cacheCompression: false, // 关闭缓存文件压缩
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
+            ],
           },
         ],
       },
@@ -79,20 +96,34 @@ module.exports = {
     new ESLintPlugin({
       // 检查src下的文件
       context: path.resolve(__dirname, "../src"),
+      exclude: "node_modules", // 默认值
+      cache: true,
+      cacheLocation: path.resolve(
+        __dirname,
+        "../node_modules/.cache/eslintcache"
+      ),
     }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "../public/index.html"),
     }),
-    new MiniCssExtractPlugin({
-      filename: "static/css/main.css",
-    }),
   ],
+
+  optimization: {
+    minimizer: [
+      new CssMinimizerPlugin(),
+      new TerserWebpackPlugin({
+        parallel: threads,
+      }),
+    ],
+  },
 
   devServer: {
     host: "localhost",
     port: "3000",
     open: true,
+    hot: true,
   },
 
   mode: "development",
+  devtool: "cheap-module-source-map",
 };

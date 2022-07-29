@@ -7,6 +7,7 @@ module.exports = {
       jsx: true, // react项目
     },
   },
+  parser: "@babel/eslint-parser", // 支持最新的最终 ECMAScript 标准
 
   // 具体规则
   rules: {
@@ -23,4 +24,5 @@ module.exports = {
   // eslint: eslint:recommended
   extends: ["eslint:recommended"],
   // 我们的规则会覆盖掉继承的
+  plugins: ["import"],
 };
